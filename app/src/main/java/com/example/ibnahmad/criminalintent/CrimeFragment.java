@@ -1,8 +1,11 @@
 package com.example.ibnahmad.criminalintent;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.icu.text.DateFormat;
 import android.net.Uri;
@@ -14,8 +17,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.FileProvider;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,12 +36,14 @@ import android.widget.ImageView;
 
 import java.io.File;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class CrimeFragment extends Fragment {
 
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String DIALOG_DATE = "DialogDate";
+    private static final String TAG = CrimeFragment.class.getSimpleName();
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_CONTACT = 1;
     private static final int REQUEST_PHOTO = 2;
@@ -149,13 +156,28 @@ public class CrimeFragment extends Fragment {
         boolean canTakePhoto = mPhotoFile != null && captureImage.resolveActivity(packageManager) != null;
         mPhotoButton.setEnabled(canTakePhoto);
         if (canTakePhoto){
-            Uri uri = Uri.fromFile(mPhotoFile);
+//            Uri uri = Uri.fromFile(mPhotoFile);
+            Uri uri = FileProvider.getUriForFile(getContext().getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", mPhotoFile);
             captureImage.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            captureImage.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+                captureImage.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN){
+                ClipData clipData = ClipData.newUri(getActivity().getContentResolver(), "Photo", uri);
+
+                captureImage.setClipData(clipData);
+                captureImage.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }*/
         }
         mPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivityForResult(captureImage, REQUEST_PHOTO);
+                try {
+                    startActivityForResult(captureImage, REQUEST_PHOTO);
+                } catch (Exception e){
+                    Log.d(TAG, "Error message: " + e.getMessage());
+                }
             }
         });
 
